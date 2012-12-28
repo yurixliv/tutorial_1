@@ -1,12 +1,38 @@
+#---
+# Excerpted from "Agile Web Development with Rails",
+# published by The Pragmatic Bookshelf.
+# Copyrights apply to this code. It may not be used to create training material, 
+# courses, books, articles, and the like. Contact us if you are in doubt.
+# We make no guarantees that this code is fit for any purpose. 
+# Visit http://www.pragmaticprogrammer.com/titles/rails4 for more book information.
+#---
 class Product < ActiveRecord::Base
+  has_many :line_items
+
+  before_destroy :ensure_not_referenced_by_any_line_item
+
+  #...
+
   attr_accessible :description, :image_url, :price, :title
-  validates :title, :image_url, :description, presence: true
-  validates :title, uniqueness: true
+  validates :title, :description, :image_url, presence: true
   validates :price, numericality: {greater_than_or_equal_to: 0.01}
-  validates :image_url, allow_blank: true, format: { 
-  	with: %r{\.(gif|jpg|png)$}i, 
-  	message: 'deve ser uma URL para uma imagem GIF, JPG ou PNG'
+# 
+  validates :title, uniqueness: true
+  validates :image_url, allow_blank: true, format: {
+    with:    %r{\.(gif|jpg|png)\Z}i,
+    message: 'must be a URL for GIF, JPG or PNG image.'
   }
-  validates_length_of :title, :minimum => 10, :too_short => "esse titulo deve ter no minimo 10 caracteres ae"
-  
+  validates :title, length: {minimum: 10}
+
+  private
+
+    # ensure that there are no line items referencing this product
+    def ensure_not_referenced_by_any_line_item
+      if line_items.empty?
+        return true
+      else
+        errors.add(:base, 'Line Items present')
+        return false
+      end
+    end
 end
